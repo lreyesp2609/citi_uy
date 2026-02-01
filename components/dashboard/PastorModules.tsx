@@ -1,6 +1,7 @@
 // components/dashboard/PastorModules.tsx
 'use client';
 
+import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import UserInfoCard from './UserInfoCard';
 import DashboardStats from './DashboardStats';
@@ -43,7 +44,7 @@ export default function PastorModules() {
         <h3 className="text-2xl font-bold text-gray-800 mb-6">Módulos de Gestión</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Gestión de Miembros */}
-          <a href="/miembros" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer block">
+          <Link href="/miembros" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer block">
             <div className="flex items-center mb-4">
               <div className="bg-blue-100 p-3 rounded-lg">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -53,10 +54,10 @@ export default function PastorModules() {
             </div>
             <h4 className="text-lg font-semibold text-gray-800 mb-2">Gestión de Miembros</h4>
             <p className="text-sm text-gray-600">Administra todos los miembros de la iglesia</p>
-          </a>
+          </Link>
 
           {/* Gestión de Líderes */}
-          <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer">
+          <Link href="/lideres" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer block">
             <div className="flex items-center mb-4">
               <div className="bg-purple-100 p-3 rounded-lg">
                 <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,7 +67,7 @@ export default function PastorModules() {
             </div>
             <h4 className="text-lg font-semibold text-gray-800 mb-2">Gestión de Líderes</h4>
             <p className="text-sm text-gray-600">Supervisa y asigna líderes de áreas</p>
-          </div>
+          </Link>
 
           {/* Programación de Eventos */}
           <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer">
