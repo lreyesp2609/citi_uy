@@ -1,9 +1,10 @@
-// components/miembros/ListaMiembros.tsx
+// components/dashboard/miembros/ListaMiembros.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { personasService, Persona } from '@/lib/services/personasService';
-import FormPersona from '@/components/dashboard/miembros/FormPersona'; // ✅ AGREGAR ESTE IMPORT
+import FormPersona from '@/components/dashboard/miembros/FormPersona';
+import VerPersona from '@/components/dashboard/miembros/VerPersona';
 
 interface ListaMiembrosProps {
   userRole: string;
@@ -17,12 +18,21 @@ export default function ListaMiembros({ userRole }: ListaMiembrosProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Estados para los modales
   const [personaToEdit, setPersonaToEdit] = useState<Persona | undefined>();
+  const [personaToView, setPersonaToView] = useState<Persona | undefined>();
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
 
   const handleEdit = (persona: Persona) => {
     setPersonaToEdit(persona);
     setShowEditForm(true);
+  };
+
+  const handleView = (persona: Persona) => {
+    setPersonaToView(persona);
+    setShowViewModal(true);
   };
 
   useEffect(() => {
@@ -190,7 +200,10 @@ export default function ListaMiembros({ userRole }: ListaMiembrosProps) {
                     {persona.celular || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="cursor-pointer text-blue-600 hover:text-blue-900 mr-3">
+                    <button
+                      onClick={() => handleView(persona)}
+                      className="cursor-pointer text-blue-600 hover:text-blue-900 mr-3"
+                    >
                       Ver
                     </button>
                     {(userRole.toLowerCase() === 'pastor' || userRole.toLowerCase() === 'lider') && (
@@ -244,9 +257,20 @@ export default function ListaMiembros({ userRole }: ListaMiembrosProps) {
         )}
       </div>
 
+      {/* Modal de Visualización */}
+      {showViewModal && personaToView && (
+        <VerPersona
+          persona={personaToView}
+          onClose={() => {
+            setShowViewModal(false);
+            setPersonaToView(undefined);
+          }}
+        />
+      )}
+
       {/* Formulario de Edición */}
       {showEditForm && personaToEdit && (
-        <FormPersona 
+        <FormPersona
           persona={personaToEdit}
           onSuccess={() => {
             setShowEditForm(false);

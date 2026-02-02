@@ -16,6 +16,8 @@ export interface Persona {
   profesion: string | null;
   estado_civil: string | null;
   lugar_trabajo: string | null;
+  rol?: string | null;
+  id_rol?: number | null;
 }
 
 export interface PersonasResponse {
@@ -25,48 +27,54 @@ export interface PersonasResponse {
   total?: number;
 }
 
-// lib/api/personas.ts
-
 /**
- * Obtiene todas las personas de la base de datos
+ * Obtiene todas las personas de la base de datos CON SUS ROLES
  * Solo accesible para roles 1 (Pastor) y 2 (Líder)
- * @returns Lista de personas ordenadas por ID
+ * @returns Lista de personas ordenadas por ID con información de roles
  */
 export async function getAllPersonas(): Promise<PersonasResponse> {
   try {
-    const { data, error } = await supabase
+    // Obtener todas las personas
+    const { data: personasData, error: personasError } = await supabase
       .from('personas')
-      .select(`
-        id_persona,
-        numero_cedula,
-        nombres,
-        apellidos,
-        fecha_nacimiento,
-        genero,
-        celular,
-        direccion,
-        correo_electronico,
-        nivel_estudio,
-        nacionalidad,
-        profesion,
-        estado_civil,
-        lugar_trabajo
-      `)
-      .order('id_persona', { ascending: true }); // ✅ Ordenar por ID
+      .select('*')
+      .order('id_persona', { ascending: true });
 
-    if (error) {
-      console.error('Error obteniendo personas:', error);
+    if (personasError) {
+      console.error('Error obteniendo personas:', personasError);
       return {
         success: false,
         message: 'Error al obtener personas'
       };
     }
 
-    // Formatear fechas si es necesario
-    const personasFormateadas = data.map(persona => ({
-      ...persona,
-      fecha_nacimiento: persona.fecha_nacimiento || null
-    }));
+    // Obtener usuarios con roles
+    const { data: usuariosData, error: usuariosError } = await supabase
+      .from('usuarios')
+      .select(`
+        id_persona,
+        id_rol,
+        rol (
+          rol
+        )
+      `);
+
+    if (usuariosError) {
+      console.error('Error obteniendo usuarios:', usuariosError);
+      // Continuar sin roles
+    }
+
+    // Combinar datos
+    const personasFormateadas = personasData.map((persona: any) => {
+      const usuario = usuariosData?.find((u: any) => u.id_persona === persona.id_persona) as any;
+      return {
+        ...persona,
+        rol: usuario?.rol?.rol || null,
+        id_rol: usuario?.id_rol || null
+      };
+    });
+
+    console.log('✅ Personas cargadas con roles:', personasFormateadas.length);
 
     return {
       success: true,
@@ -121,8 +129,8 @@ export async function createPersona(personaData: Omit<Persona, 'id_persona'>): P
 
     // Preparar datos para inserción
     const personaToInsert = {
-      nombres: personaData.nombres.trim(),
-      apellidos: personaData.apellidos.trim(),
+      nombres: personaData.nombres.trim().toUpperCase(), // ✅ MAYÚSCULAS
+      apellidos: personaData.apellidos.trim().toUpperCase(), // ✅ MAYÚSCULAS
       numero_cedula: numero_cedula,
       correo_electronico: personaData.correo_electronico?.trim() || null,
       genero: personaData.genero?.trim() || null,
@@ -181,6 +189,7 @@ export async function createPersona(personaData: Omit<Persona, 'id_persona'>): P
     };
   }
 }
+
 export async function getPersonaById(id_persona: number): Promise<PersonasResponse> {
   try {
     const { data, error } = await supabase
@@ -225,9 +234,6 @@ export async function getPersonaById(id_persona: number): Promise<PersonasRespon
     };
   }
 }
-
-
-// Agregar al final de lib/api/personas.ts
 
 /**
  * Actualiza una persona existente en la base de datos
@@ -350,10 +356,10 @@ export async function updatePersona(
     const personaToUpdate: any = {};
 
     if (personaData.nombres !== undefined) {
-      personaToUpdate.nombres = personaData.nombres.trim();
+      personaToUpdate.nombres = personaData.nombres.trim().toUpperCase(); // ✅ MAYÚSCULAS
     }
     if (personaData.apellidos !== undefined) {
-      personaToUpdate.apellidos = personaData.apellidos.trim();
+      personaToUpdate.apellidos = personaData.apellidos.trim().toUpperCase(); // ✅ MAYÚSCULAS
     }
     if (personaData.numero_cedula !== undefined) {
       personaToUpdate.numero_cedula = personaData.numero_cedula?.trim() || null;

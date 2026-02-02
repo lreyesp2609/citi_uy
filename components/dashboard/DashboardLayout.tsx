@@ -18,6 +18,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const routeNames: { [key: string]: string } = {
     '/dashboard': 'Dashboard',
     '/miembros': 'Gestión de Miembros',
+    '/lideres': 'Gestión de Líderes',
+    '/ministerio': 'Gestión deMinisterios',
     '/eventos': 'Eventos',
     '/reportes': 'Reportes',
     '/finanzas': 'Finanzas',

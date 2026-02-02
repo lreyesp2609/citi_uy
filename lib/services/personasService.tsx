@@ -20,6 +20,8 @@ export interface Persona {
   profesion: string | null;
   estado_civil: string | null;
   lugar_trabajo: string | null;
+  rol?: string | null;
+  id_rol?: number | null;
 }
 
 export interface PersonasListResponse {
@@ -43,7 +45,7 @@ export const personasService = {
   async getAll(): Promise<PersonasListResponse> {
     try {
       const response = await apiClient.get<Persona[]>('/personas');
-      
+
       // Si la respuesta tiene un array de data, devolverlo correctamente
       return {
         success: response.success,
@@ -69,7 +71,7 @@ export const personasService = {
   async getById(id: number): Promise<PersonaResponse> {
     try {
       const response = await apiClient.get<Persona>(`/personas/${id}`);
-      
+
       return {
         success: response.success,
         message: response.message,
@@ -91,7 +93,7 @@ export const personasService = {
   async create(persona: Omit<Persona, 'id_persona'>): Promise<PersonaResponse> {
     try {
       const response = await apiClient.post<Persona>('/personas', persona);
-      
+
       return {
         success: response.success,
         message: response.message,
@@ -114,7 +116,7 @@ export const personasService = {
   async update(id: number, persona: Partial<Persona>): Promise<PersonaResponse> {
     try {
       const response = await apiClient.put<Persona>(`/personas/${id}`, persona);
-      
+
       return {
         success: response.success,
         message: response.message,
@@ -136,7 +138,7 @@ export const personasService = {
   async delete(id: number): Promise<{ success: boolean; message?: string }> {
     try {
       const response = await apiClient.delete(`/personas/${id}`);
-      
+
       return {
         success: response.success,
         message: response.message

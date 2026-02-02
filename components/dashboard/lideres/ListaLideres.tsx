@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { personasService, Persona } from '@/lib/services/personasService';
+import VerPersona from '@/components/dashboard/miembros/VerPersona';
+import DesignarRol from '@/components/dashboard/lideres/DesignarRol';
 
 interface ListaLideresProps {
   userRole: string;
@@ -16,6 +18,12 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  
+  // Estados para modales
+  const [personaToView, setPersonaToView] = useState<Persona | undefined>();
+  const [personaToAssignRole, setPersonaToAssignRole] = useState<Persona | undefined>();
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showAssignRoleModal, setShowAssignRoleModal] = useState(false);
 
   useEffect(() => {
     cargarPersonas();
@@ -60,13 +68,13 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
   };
 
   const handleDesignarRol = (persona: Persona) => {
-    // TODO: Implementar lógica para designar rol
-    console.log('Designar rol a:', persona);
+    setPersonaToAssignRole(persona);
+    setShowAssignRoleModal(true);
   };
 
   const handleVerDetalles = (persona: Persona) => {
-    // TODO: Implementar vista de detalles
-    console.log('Ver detalles de:', persona);
+    setPersonaToView(persona);
+    setShowViewModal(true);
   };
 
   // Paginación
@@ -79,7 +87,7 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
     return (
       <div className="bg-white rounded-lg shadow p-8">
         <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           <span className="ml-3 text-gray-600">Cargando personas...</span>
         </div>
       </div>
@@ -111,19 +119,8 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
 
   return (
     <div className="bg-white rounded-lg shadow">
-      {/* Header con título y estadísticas */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">Gestión de Líderes</h2>
-            <p className="text-sm text-gray-600 mt-1">Administra y asigna roles de liderazgo</p>
-          </div>
-          <div className="bg-purple-100 px-4 py-2 rounded-lg">
-            <span className="text-purple-800 font-semibold">{filteredPersonas.length} Personas</span>
-          </div>
-        </div>
-
-        {/* Barra de búsqueda */}
+      {/* Barra de búsqueda y filtros */}
+      <div className="p-4 border-b border-gray-200">
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -132,7 +129,7 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
                 placeholder="Buscar por nombre, cédula o correo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 placeholder-gray-400"
               />
               <svg
                 className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
@@ -152,6 +149,9 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </button>
+        </div>
+        <div className="mt-2 text-sm text-gray-600">
+          Mostrando {currentItems.length} de {filteredPersonas.length} personas
         </div>
       </div>
 
@@ -182,25 +182,12 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {currentItems.map((persona) => (
-              <tr key={persona.id_persona} className="hover:bg-purple-50 transition">
+              <tr key={persona.id_persona} className="hover:bg-gray-50 transition">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                   {persona.numero_cedula}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="h-10 w-10 flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                        <span className="text-purple-600 font-medium text-sm">
-                          {persona.nombres.charAt(0)}{persona.apellidos.charAt(0)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {persona.nombres} {persona.apellidos}
-                      </div>
-                    </div>
-                  </div>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {persona.nombres} {persona.apellidos}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {persona.correo_electronico || '-'}
@@ -209,30 +196,34 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
                   {persona.celular || '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                    Sin rol
-                  </span>
+                  {persona.rol ? (
+                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      persona.rol.toLowerCase() === 'pastor'
+                        ? 'bg-purple-100 text-purple-800'
+                        : persona.rol.toLowerCase() === 'líder' || persona.rol.toLowerCase() === 'lider'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-green-100 text-green-800'
+                    }`}>
+                      {persona.rol}
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                      Sin rol
+                    </span>
+                  )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
                     onClick={() => handleVerDetalles(persona)}
-                    className="cursor-pointer inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50 transition"
+                    className="cursor-pointer text-blue-600 hover:text-blue-900 mr-3"
                   >
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
                     Ver
                   </button>
-                  
                   {userRole.toLowerCase() === 'pastor' && (
                     <button
                       onClick={() => handleDesignarRol(persona)}
-                      className="cursor-pointer inline-flex items-center px-3 py-1.5 border border-purple-300 text-purple-700 bg-purple-50 rounded-md hover:bg-purple-100 transition"
+                      className="cursor-pointer text-red-600 hover:text-red-900"
                     >
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
                       Designar Rol
                     </button>
                   )}
@@ -246,11 +237,9 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
       {/* Sin resultados */}
       {currentItems.length === 0 && (
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-4">
-            <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          </div>
+          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
           <p className="mt-2 text-sm text-gray-500">
             {searchTerm ? 'No se encontraron resultados' : 'No hay personas registradas'}
           </p>
@@ -278,6 +267,33 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
             Siguiente
           </button>
         </div>
+      )}
+
+      {/* Modal de Visualización */}
+      {showViewModal && personaToView && (
+        <VerPersona 
+          persona={personaToView}
+          onClose={() => {
+            setShowViewModal(false);
+            setPersonaToView(undefined);
+          }}
+        />
+      )}
+
+      {/* Modal de Designar Rol */}
+      {showAssignRoleModal && personaToAssignRole && (
+        <DesignarRol 
+          persona={personaToAssignRole}
+          onSuccess={() => {
+            setShowAssignRoleModal(false);
+            setPersonaToAssignRole(undefined);
+            cargarPersonas(); // Recargar lista para ver cambios
+          }}
+          onClose={() => {
+            setShowAssignRoleModal(false);
+            setPersonaToAssignRole(undefined);
+          }}
+        />
       )}
     </div>
   );
