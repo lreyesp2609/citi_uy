@@ -9,6 +9,8 @@ interface Usuario {
     nombre_completo: string;
     email: string;
     rol: number;
+    datos_completos: boolean;
+    campos_faltantes: string[];
 }
 
 interface AsignarLideresProps {
@@ -38,6 +40,20 @@ function AsignarLideresContent({ ministerio, onSuccess, onCancel }: AsignarLider
         title: '',
         message: ''
     });
+
+    const camposLabel: Record<string, string> = {
+        nombres: 'Nombres',
+        apellidos: 'Apellidos',
+        numero_cedula: 'Número de cédula',
+        correo_electronico: 'Correo electrónico',
+        celular: 'Celular',
+        genero: 'Género',
+        fecha_nacimiento: 'Fecha de nacimiento',
+        direccion: 'Dirección'
+    };
+
+    const formatMissingFields = (campos: string[]) =>
+        campos.map((campo) => camposLabel[campo] || campo).join(', ');
 
     // Bloquear scroll del body
     useEffect(() => {
@@ -71,9 +87,14 @@ function AsignarLideresContent({ ministerio, onSuccess, onCancel }: AsignarLider
             const response = await fetch('/api/usuarios');
             const data = await response.json();
 
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Error al cargar la lista de usuarios');
+            }
+
+
             if (response.ok) {
                 // Filtrar solo Pastores (rol 1) y Líderes (rol 2)
-                const lideresDisponibles = data.filter((u: Usuario) => u.rol === 1 || u.rol === 2);
+                const lideresDisponibles = data.data.filter((u: Usuario) => u.rol === 1 || u.rol === 2);
                 setUsuarios(lideresDisponibles);
             }
         } catch (err) {
@@ -101,6 +122,14 @@ function AsignarLideresContent({ ministerio, onSuccess, onCancel }: AsignarLider
     };
 
     const handleToggleLider = (usuarioId: number) => {
+        const usuario = usuarios.find((u) => u.id_usuario === usuarioId);
+        if (usuario && !usuario.datos_completos && !selectedLideres.includes(usuarioId)) {
+            const errorMsg = `El usuario no tiene datos completos. Faltan: ${formatMissingFields(usuario.campos_faltantes)}`;
+            setError(errorMsg);
+            showToast('warning', 'Datos incompletos', errorMsg);
+            return;
+        }
+
         setSelectedLideres(prev => {
             if (prev.includes(usuarioId)) {
                 setError('');
@@ -142,8 +171,15 @@ function AsignarLideresContent({ ministerio, onSuccess, onCancel }: AsignarLider
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Error al asignar líderes');
+                if (data.missingDetails?.length) {
+                    const missingResumen = data.missingDetails
+                        .map((detalle: any) => `${detalle.nombre_completo}: ${formatMissingFields(detalle.campos_faltantes)}`)
+                        .join(' | ');
+                    throw new Error(`Hay líderes con datos incompletos. ${missingResumen}`);
+                }
+                throw new Error(data.message || 'Error al asignar líderes');
             }
+
 
             console.log('✅ Líderes asignados exitosamente');
             showToast(
@@ -290,6 +326,7 @@ function AsignarLideresContent({ ministerio, onSuccess, onCancel }: AsignarLider
                                                     ? 'border-red-500 bg-red-50'
                                                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                                                 }
+                        ${!usuario.datos_completos ? 'opacity-70 cursor-not-allowed' : ''}
                       `}
                                         >
                                             <div className="flex items-center justify-between">
@@ -302,6 +339,22 @@ function AsignarLideresContent({ ministerio, onSuccess, onCancel }: AsignarLider
                                                     </div>
                                                     <div className="text-xs text-gray-400 mt-1">
                                                         {usuario.rol === 1 ? 'Pastor' : 'Líder'}
+                                                    </div>
+                                                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                                        {usuario.datos_completos ? (
+                                                            <span className="rounded-full bg-green-100 px-2 py-1 text-green-700">
+                                                                Datos completos
+                                                            </span>
+                                                        ) : (
+                                                            <>
+                                                                <span className="rounded-full bg-yellow-100 px-2 py-1 text-yellow-700">
+                                                                    Datos incompletos
+                                                                </span>
+                                                                <span className="text-yellow-700">
+                                                                    Faltan: {formatMissingFields(usuario.campos_faltantes)}
+                                                                </span>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 {selectedLideres.includes(usuario.id_usuario) && (

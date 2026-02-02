@@ -27,6 +27,32 @@ export interface MinisteriosResponse {
     message?: string;
     data?: Ministerio[];
     total?: number;
+    missingDetails?: Array<{
+        id_usuario: number;
+        nombre_completo: string;
+        campos_faltantes: string[];
+    }>;
+}
+
+const requiredLeaderFields = [
+    'nombres',
+    'apellidos',
+    'numero_cedula',
+    'correo_electronico',
+    'celular',
+    'genero',
+    'fecha_nacimiento',
+    'direccion'
+];
+
+function getMissingLeaderFields(persona: Record<string, any>): string[] {
+    return requiredLeaderFields.filter((field) => {
+        const value = persona?.[field];
+        if (typeof value === 'string') {
+            return value.trim() === '';
+        }
+        return !value;
+    });
 }
 
 /**
@@ -487,6 +513,21 @@ export async function asignarLideresMinisterio(
         const { data: usuarios, error: usuariosError } = await supabase
             .from('usuarios')
             .select('id_usuario, id_rol')
+            .select(`
+                id_usuario,
+                id_rol,
+                usuario,
+                personas (
+                    nombres,
+                    apellidos,
+                    numero_cedula,
+                    correo_electronico,
+                    celular,
+                    genero,
+                    fecha_nacimiento,
+                    direccion
+                )
+            `)
             .in('id_usuario', ids_usuarios);
 
         if (usuariosError || !usuarios || usuarios.length !== ids_usuarios.length) {
@@ -502,6 +543,28 @@ export async function asignarLideresMinisterio(
             return {
                 success: false,
                 message: 'Solo se pueden asignar usuarios con rol de Pastor o Líder'
+            };
+        }
+
+        const missingDetails = usuarios
+            .map((usuario: any) => {
+                const persona = usuario.personas || {};
+                const campos_faltantes = getMissingLeaderFields(persona);
+                return {
+                    id_usuario: usuario.id_usuario,
+                    nombre_completo: persona.nombres && persona.apellidos
+                        ? `${persona.nombres} ${persona.apellidos}`
+                        : persona.nombres || persona.apellidos || usuario.usuario,
+                    campos_faltantes
+                };
+            })
+            .filter((detalle) => detalle.campos_faltantes.length > 0);
+
+        if (missingDetails.length > 0) {
+            return {
+                success: false,
+                message: 'Hay líderes con datos incompletos',
+                missingDetails
             };
         }
 

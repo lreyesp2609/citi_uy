@@ -96,7 +96,11 @@ export async function POST(
 
         if (!result.success) {
             return NextResponse.json(
-                { success: false, message: result.message },
+                {
+                    success: false,
+                    message: result.message,
+                    missingDetails: result.missingDetails || []
+                },
                 { status: 400 }
             );
         }
