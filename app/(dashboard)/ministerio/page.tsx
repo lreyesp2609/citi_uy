@@ -27,6 +27,7 @@ export default function MinisterioPage() {
   const [ministerioToAssignLideres, setMinisterioToAssignLideres] = useState<Ministerio | undefined>();
   const [showMenuId, setShowMenuId] = useState<number | null>(null);
   const [toast, setToast] = useState<ToastData | null>(null);
+  const [activeLogo, setActiveLogo] = useState<{ url: string; nombre: string } | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     show: boolean;
     ministerio?: Ministerio;
@@ -261,11 +262,18 @@ export default function MinisterioPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   {ministerio.logo_url ? (
-                    <img
-                      src={ministerio.logo_url}
-                      alt={ministerio.nombre}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setActiveLogo({ url: ministerio.logo_url as string, nombre: ministerio.nombre })}
+                      className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg"
+                      aria-label={`Ver logo del ministerio ${ministerio.nombre}`}
+                    >
+                      <img
+                        src={ministerio.logo_url}
+                        alt={ministerio.nombre}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    </button>
                   ) : (
                     getIconoMinisterio(ministerio.nombre)
                   )}
@@ -455,6 +463,43 @@ export default function MinisterioPage() {
               >
                 {confirmAction.action === 'deshabilitar' ? 'Sí, deshabilitar' : 'Sí, habilitar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeLogo && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+          onClick={() => setActiveLogo(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Logo de {activeLogo.nombre}</h3>
+                <p className="text-sm text-gray-500">Vista previa ampliada</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveLogo(null)}
+                className="cursor-pointer text-gray-400 hover:text-gray-600"
+                aria-label="Cerrar vista previa"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex items-center justify-center">
+              <img
+                src={activeLogo.url}
+                alt={`Logo de ${activeLogo.nombre}`}
+                className="max-h-[60vh] w-auto rounded-xl object-contain"
+              />
             </div>
           </div>
         </div>

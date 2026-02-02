@@ -46,7 +46,14 @@ export async function GET(
             return NextResponse.json(result, { status: 404 });
         }
 
-        return NextResponse.json(result.data?.[0], { status: 200 });
+        return NextResponse.json(
+            {
+                success: true,
+                data: result.data?.[0],
+                message: 'Ministerio obtenido exitosamente'
+            },
+            { status: 200 }
+        );
 
     } catch (error) {
         console.error('💥 Error en GET /api/ministerios/[id]:', error);
@@ -160,7 +167,14 @@ export async function PUT(
 
         console.log('✅ Ministerio actualizado exitosamente:', id_ministerio);
 
-        return NextResponse.json(result.data?.[0], { status: 200 });
+        return NextResponse.json(
+            {
+                success: true,
+                data: result.data?.[0],
+                message: 'Ministerio actualizado exitosamente'
+            },
+            { status: 200 }
+        );
 
     } catch (error) {
         console.error('💥 Error en PUT /api/ministerios/[id]:', error);

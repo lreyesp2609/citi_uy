@@ -20,6 +20,7 @@ interface ToastState {
 }
 
 function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinisterioProps) {
+    const LOGO_SIZE = 512;
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const isEditing = !!ministerio;
@@ -137,7 +138,7 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
                 throw new Error('El archivo debe ser una imagen');
             }
 
-            const processedFile = await createSquarePreview(file, 256);
+            const processedFile = await createSquarePreview(file, LOGO_SIZE);
             const previewUrl = URL.createObjectURL(processedFile);
 
             setLogoFile(processedFile);
@@ -228,7 +229,7 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
             const response = isEditing
                 ? await ministeriosService.update(ministerio.id_ministerio, payload)
                 : await ministeriosService.create({ ...payload, activo: true });
-                                
+
             if (!response.success) {
                 // Traducir mensajes técnicos a lenguaje más amigable
                 let userFriendlyMessage = response.message || 'Ocurrió un error inesperado';
@@ -403,7 +404,7 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
                                                 </div>
                                             </div>
                                             <div className="text-xs text-gray-500">
-                                                Se recorta automáticamente al centro y se ajusta a 256x256 px.
+                                                Se recorta automáticamente al centro y se ajusta a {LOGO_SIZE}x{LOGO_SIZE} px.
                                             </div>
                                         </div>
                                         {logoError && (
