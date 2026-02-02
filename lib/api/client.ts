@@ -1,3 +1,4 @@
+// lib/api/client.ts
 /**
  * Cliente API centralizado para todas las peticiones HTTP
  */
@@ -6,10 +7,11 @@ interface RequestOptions extends RequestInit {
   params?: Record<string, string>;
 }
 
-interface ApiResponse<T = any> {
+export interface ApiResponse<T = any> {
   success: boolean;
   message?: string;
   data?: T;
+  total?: number; // 👈 AGREGADO: Para paginación y conteo
   error?: string;
   errors?: string[];
 }
@@ -75,7 +77,7 @@ class ApiClient {
   /**
    * GET request
    */
-  async get<T>(endpoint: string, params?: Record<string, string>) {
+  async get<T>(endpoint: string, params?: Record<string, string>): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'GET',
       params,
@@ -85,7 +87,7 @@ class ApiClient {
   /**
    * POST request
    */
-  async post<T>(endpoint: string, body?: any) {
+  async post<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
@@ -95,7 +97,7 @@ class ApiClient {
   /**
    * PUT request
    */
-  async put<T>(endpoint: string, body?: any) {
+  async put<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: body ? JSON.stringify(body) : undefined,
@@ -105,7 +107,7 @@ class ApiClient {
   /**
    * PATCH request
    */
-  async patch<T>(endpoint: string, body?: any) {
+  async patch<T>(endpoint: string, body?: any): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'PATCH',
       body: body ? JSON.stringify(body) : undefined,
@@ -115,7 +117,7 @@ class ApiClient {
   /**
    * DELETE request
    */
-  async delete<T>(endpoint: string) {
+  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: 'DELETE',
     });
