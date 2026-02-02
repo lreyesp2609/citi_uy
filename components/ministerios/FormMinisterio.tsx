@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Toast from '@/components/ui/Toast';
+import { ministeriosService } from '@/lib/services/ministeriosService';
+import { uploadsService } from '@/lib/services/uploadsService';
 
 interface FormMinisterioProps {
     ministerio?: any;
@@ -35,6 +37,12 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
         logo_url: ministerio?.logo_url || ''
     });
 
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string>(ministerio?.logo_url || '');
+    const [logoRemoved, setLogoRemoved] = useState(false);
+    const [logoProcessing, setLogoProcessing] = useState(false);
+    const [logoError, setLogoError] = useState('');
+
     // Bloquear scroll del body
     useEffect(() => {
         const originalStyle = window.getComputedStyle(document.body).overflow;
@@ -53,6 +61,14 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
         return () => window.removeEventListener('keydown', handleEsc);
     }, [onCancel]);
 
+    useEffect(() => {
+        return () => {
+            if (logoPreview.startsWith('blob:')) {
+                URL.revokeObjectURL(logoPreview);
+            }
+        };
+    }, [logoPreview]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -65,12 +81,129 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
         setToast({ show: true, type, title, message });
     };
 
+    const createSquarePreview = async (file: File, size: number) => {
+        const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve(img);
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error('No se pudo cargar la imagen'));
+            };
+            img.src = objectUrl;
+        });
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+            throw new Error('No se pudo preparar el recorte de la imagen');
+        }
+
+        const cropSize = Math.min(image.width, image.height);
+        const cropX = (image.width - cropSize) / 2;
+        const cropY = (image.height - cropSize) / 2;
+
+        canvas.width = size;
+        canvas.height = size;
+
+        ctx.drawImage(image, cropX, cropY, cropSize, cropSize, 0, 0, size, size);
+
+        const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((output) => {
+                if (!output) {
+                    reject(new Error('No se pudo generar la vista previa'));
+                    return;
+                }
+                resolve(output);
+            }, 'image/png', 0.92);
+        });
+
+        return new File([blob], `logo-${Date.now()}.png`, { type: 'image/png' });
+    };
+
+    const handleLogoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setLogoError('');
+        setLogoProcessing(true);
+
+        try {
+            if (!file.type.startsWith('image/')) {
+                throw new Error('El archivo debe ser una imagen');
+            }
+
+            const processedFile = await createSquarePreview(file, 256);
+            const previewUrl = URL.createObjectURL(processedFile);
+
+            setLogoFile(processedFile);
+            setLogoRemoved(false);
+
+            setLogoPreview((prev) => {
+                if (prev.startsWith('blob:')) {
+                    URL.revokeObjectURL(prev);
+                }
+                return previewUrl;
+            });
+        } catch (err: any) {
+            const message = err?.message || 'No se pudo procesar la imagen';
+            setLogoError(message);
+            showToast('error', 'Logo inválido', message);
+            event.target.value = '';
+        } finally {
+            setLogoProcessing(false);
+        }
+    };
+
+    const handleRemoveLogo = () => {
+        setLogoFile(null);
+        setLogoRemoved(true);
+        setLogoError('');
+
+        setLogoPreview((prev) => {
+            if (prev.startsWith('blob:')) {
+                URL.revokeObjectURL(prev);
+            }
+            return '';
+        });
+    };
+
+    const uploadLogo = async (file: File) => {
+        const form = new FormData();
+        form.append('file', file);
+
+        const response = await fetch('/api/uploads/ministerios', {
+            method: 'POST',
+            body: form,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data?.error || 'No se pudo subir el logo');
+        }
+
+        return data.url as string;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
         try {
+            if (logoProcessing) {
+                const errorMsg = 'Espera a que termine el recorte del logo antes de guardar';
+                setError(errorMsg);
+                showToast('warning', 'Procesando logo', errorMsg);
+                setLoading(false);
+                return;
+            }
+
             // Validación de campos obligatorios
             if (!formData.nombre.trim() || !formData.descripcion.trim()) {
                 const errorMsg = 'Los campos Nombre y Descripción son obligatorios';
@@ -80,25 +213,25 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
                 return;
             }
 
-            const url = isEditing
-                ? `/api/ministerios/${ministerio.id_ministerio}`
-                : '/api/ministerios';
+            let logoUrlValue = formData.logo_url;
+            if (logoFile) {
+                logoUrlValue = await uploadLogo(logoFile);
+            } else if (logoRemoved) {
+                logoUrlValue = '';
+            }
 
-            const method = isEditing ? 'PUT' : 'POST';
+            const payload = {
+                ...formData,
+                logo_url: logoUrlValue,
+            };
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
+            const response = isEditing
+                ? await ministeriosService.update(ministerio.id_ministerio, payload)
+                : await ministeriosService.create({ ...payload, activo: true });
+                                
+            if (!response.success) {
                 // Traducir mensajes técnicos a lenguaje más amigable
-                let userFriendlyMessage = data.error || 'Ocurrió un error inesperado';
+                let userFriendlyMessage = response.message || 'Ocurrió un error inesperado';
 
                 if (userFriendlyMessage.includes('nombre') && userFriendlyMessage.includes('existe')) {
                     userFriendlyMessage = 'Ya existe un ministerio con este nombre';
@@ -227,20 +360,54 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
                                     {/* URL del Logo */}
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            URL del Logo (opcional)
+                                            Logo del Ministerio (opcional)
                                         </label>
-                                        <input
-                                            type="url"
-                                            name="logo_url"
-                                            value={formData.logo_url}
-                                            onChange={handleChange}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900"
-                                            placeholder="https://ejemplo.com/logo.png"
-                                        />
-                                        {formData.logo_url && (
-                                            <p className="mt-2 text-xs text-gray-500">
-                                                Vista previa del logo aparecerá en la tarjeta del ministerio
-                                            </p>
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-20 h-20 rounded-xl border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center overflow-hidden">
+                                                    {logoPreview ? (
+                                                        <img
+                                                            src={logoPreview}
+                                                            alt="Vista previa del logo"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400 text-center px-2">
+                                                            Sin logo
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <input
+                                                        id="logo-upload"
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleLogoChange}
+                                                        className="hidden"
+                                                    />
+                                                    <label
+                                                        htmlFor="logo-upload"
+                                                        className="cursor-pointer inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
+                                                    >
+                                                        {logoPreview ? 'Cambiar logo' : 'Subir logo'}
+                                                    </label>
+                                                    {logoPreview && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleRemoveLogo}
+                                                            className="text-xs text-red-600 hover:text-red-700"
+                                                        >
+                                                            Quitar logo
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                                Se recorta automáticamente al centro y se ajusta a 256x256 px.
+                                            </div>
+                                        </div>
+                                        {logoError && (
+                                            <p className="mt-2 text-xs text-red-600">{logoError}</p>
                                         )}
                                     </div>
                                 </div>

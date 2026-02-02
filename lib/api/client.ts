@@ -39,11 +39,12 @@ class ApiClient {
       url += `?${queryString}`;
     }
 
+    const isFormData = fetchOptions.body instanceof FormData;
+
     // Configuración por defecto
     const config: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
-        ...fetchOptions.headers,
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...fetchOptions.headers,
       },
       credentials: 'include', // Importante para cookies
       ...fetchOptions,
@@ -91,6 +92,16 @@ class ApiClient {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  /**
+   * POST request con FormData
+   */
+  async postForm<T>(endpoint: string, body: FormData): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body,
     });
   }
 

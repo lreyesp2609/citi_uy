@@ -83,11 +83,11 @@ function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) 
     const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
@@ -109,7 +109,7 @@ function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) 
       // Validación de edad mínima (18 años)
       if (formData.fecha_nacimiento) {
         const age = calculateAge(formData.fecha_nacimiento);
-        
+
         if (age < 18) {
           const errorMsg = `La persona debe ser mayor de 18 años. Edad actual: ${age} años`;
           setError(errorMsg);
@@ -134,11 +134,11 @@ function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) 
         showToast(
           'success',
           isEditing ? 'Persona actualizada' : 'Persona registrada',
-          isEditing 
+          isEditing
             ? 'Los datos de la persona han sido actualizados correctamente'
             : 'La persona ha sido registrada exitosamente'
         );
-        
+
         // Esperar un momento para que el usuario vea el toast antes de cerrar
         setTimeout(() => {
           onSuccess();
@@ -146,7 +146,7 @@ function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) 
       } else {
         // Traducir mensajes técnicos a lenguaje más amigable
         let userFriendlyMessage = result.message || 'Ocurrió un error inesperado';
-        
+
         // Mejorar mensajes comunes de error
         if (userFriendlyMessage.includes('cédula')) {
           userFriendlyMessage = 'Ya existe una persona registrada con este número de cédula';
@@ -157,7 +157,7 @@ function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) 
         } else if (userFriendlyMessage.includes('duplicado') || userFriendlyMessage.includes('existe')) {
           userFriendlyMessage = 'Ya existe una persona con estos datos';
         }
-        
+
         setError(userFriendlyMessage);
         showToast('error', 'Error al guardar', userFriendlyMessage);
       }
@@ -181,7 +181,7 @@ function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) 
           onClose={() => setToast({ ...toast, show: false })}
         />
       )}
-      
+
       <div
         className="fixed inset-0 z-[9999] overflow-y-auto"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
