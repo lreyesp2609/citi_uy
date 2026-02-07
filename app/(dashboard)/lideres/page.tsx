@@ -3,13 +3,31 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import ListaLideres from '@/components/dashboard/lideres/ListaLideres';
+import Toast from '@/components/ui/Toast';
+
+interface ToastState {
+  show: boolean;
+  type: 'success' | 'error' | 'info' | 'warning';
+  title: string;
+  message: string;
+}
 
 export default function LideresPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
+  const showToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setToast({ show: true, type, title, message });
+  };
 
   // Verificar autenticación y permisos
   useEffect(() => {
@@ -76,7 +94,17 @@ export default function LideresPage() {
         </div>
 
         {/* Lista de Líderes */}
-        <ListaLideres userRole={user.rol || ''} />
+        <ListaLideres userRole={user.rol || ''} onShowToast={showToast} />
+
+        {/* Toast de notificación */}
+        {toast.show && (
+          <Toast
+            type={toast.type}
+            title={toast.title}
+            message={toast.message}
+            onClose={() => setToast({ ...toast, show: false })}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

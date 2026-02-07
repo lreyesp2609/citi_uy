@@ -247,7 +247,13 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
             }
 
             console.log(`✅ Ministerio ${isEditing ? 'actualizado' : 'creado'} exitosamente`);
-            console.log(`✅ Ministerio ${isEditing ? 'actualizado' : 'creado'} exitosamente`);
+            showToast(
+                'success',
+                isEditing ? 'Ministerio actualizado' : 'Ministerio creado',
+                isEditing
+                    ? 'El ministerio ha sido actualizado correctamente'
+                    : 'El ministerio ha sido creado exitosamente'
+            );
             onSuccess();
 
 

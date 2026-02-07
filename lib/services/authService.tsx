@@ -23,6 +23,8 @@ export interface User {
   genero?: string;
   nivel_estudio?: string;
   profesion?: string;
+  // Control de cambio de contraseña
+  requiere_cambio_password?: boolean;
 }
 
 export interface LoginResult {
@@ -66,5 +68,16 @@ export const authService = {
    */
   async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message?: string }> {
     return apiClient.post('/auth/password-reset/confirm', { token, newPassword });
+  },
+
+  /**
+   * Cambia la contraseña del usuario autenticado
+   */
+  async changePassword(data: {
+    currentPassword: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<{ success: boolean; message?: string }> {
+    return apiClient.post('/auth/change-password', data);
   },
 };

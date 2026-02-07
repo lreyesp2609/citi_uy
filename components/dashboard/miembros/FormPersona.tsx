@@ -10,6 +10,7 @@ interface FormPersonaProps {
   persona?: Persona; // Si existe, es edición; si no, es creación
   onSuccess: () => void;
   onCancel: () => void;
+  onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => void;
 }
 
 interface ToastState {
@@ -19,7 +20,7 @@ interface ToastState {
   message: string;
 }
 
-function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) {
+function FormPersonaContent({ persona, onSuccess, onCancel, onShowToast }: FormPersonaProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const isEditing = !!persona; // true si estamos editando
@@ -75,7 +76,13 @@ function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) 
   };
 
   const showToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
-    setToast({ show: true, type, title, message });
+    if (onShowToast) {
+      // Usar el toast del padre si está disponible
+      onShowToast(type, title, message);
+    } else {
+      // Fallback al toast interno
+      setToast({ show: true, type, title, message });
+    }
   };
 
   const calculateAge = (birthDate: string): number => {
@@ -139,10 +146,7 @@ function FormPersonaContent({ persona, onSuccess, onCancel }: FormPersonaProps) 
             : 'La persona ha sido registrada exitosamente'
         );
 
-        // Esperar un momento para que el usuario vea el toast antes de cerrar
-        setTimeout(() => {
-          onSuccess();
-        }, 1500);
+        onSuccess();
       } else {
         // Traducir mensajes técnicos a lenguaje más amigable
         let userFriendlyMessage = result.message || 'Ocurrió un error inesperado';

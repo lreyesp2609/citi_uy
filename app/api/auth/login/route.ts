@@ -35,13 +35,13 @@ export async function POST(request: NextRequest) {
     // Si no se encontró por usuario, buscar por correo o cédula
     if (!usuarioData) {
       console.log('🔍 No encontrado por usuario, buscando por correo/cédula...');
-      
+
       const { data: persona, error: personaError } = await supabase
         .from('personas')
         .select('id_persona')
         .or(`correo_electronico.eq.${usuario},numero_cedula.eq.${usuario}`)
         .maybeSingle();
-      
+
       if (persona) {
         const { data: usuarioPorPersona, error: usuarioPersonaError } = await supabase
           .from('usuarios')
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           `)
           .eq('id_persona', persona.id_persona)
           .maybeSingle();
-        
+
         usuarioData = usuarioPorPersona;
       }
     }
@@ -113,6 +113,16 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Rol del usuario:', rolData?.rol);
 
+    // Detectar si la contraseña es la cédula (contraseña predeterminada)
+    let requiereCambioPassword = false;
+    if (personaData?.numero_cedula) {
+      const passwordEsCedula = await bcrypt.compare(personaData.numero_cedula, usuarioData.contrasenia);
+      if (passwordEsCedula) {
+        console.log('⚠️ Usuario tiene contraseña predeterminada (cédula)');
+        requiereCambioPassword = true;
+      }
+    }
+
     // Preparar objeto de usuario
     const user = {
       id: usuarioData.id_usuario,
@@ -127,6 +137,7 @@ export async function POST(request: NextRequest) {
       genero: personaData?.genero,
       nivel_estudio: personaData?.nivel_estudio,
       profesion: personaData?.profesion,
+      requiere_cambio_password: requiereCambioPassword,
     };
 
     // Generar token JWT

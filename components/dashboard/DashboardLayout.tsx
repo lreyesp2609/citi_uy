@@ -3,13 +3,14 @@
 
 import { useAuth } from '@/providers/AuthProvider';
 import { usePathname, useRouter } from 'next/navigation';
+import ChangePasswordModal from './ChangePasswordModal';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, updatePasswordRequirement } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -28,8 +29,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const currentPageName = routeNames[pathname] || 'Módulo';
 
+  const handlePasswordChangeSuccess = () => {
+    // Actualizar el estado del usuario para quitar el requisito de cambio
+    updatePasswordRequirement(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Modal de cambio de contraseña obligatorio */}
+      {user?.requiere_cambio_password && (
+        <ChangePasswordModal onSuccess={handlePasswordChangeSuccess} />
+      )}
+
       {/* Navbar */}
       <nav className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -42,12 +53,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 </p>
               )}
             </div>
-            <button 
-              onClick={logout}
-              className="cursor-pointer bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition shadow"
-            >
-              Cerrar Sesión
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push('/configuracion')}
+                className="cursor-pointer bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition shadow flex items-center gap-2"
+                title="Configuración"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Configuración
+              </button>
+              <button
+                onClick={logout}
+                className="cursor-pointer bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition shadow"
+              >
+                Cerrar Sesión
+              </button>
+            </div>
           </div>
         </div>
       </nav>
@@ -79,7 +103,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </svg>
               <span className="text-gray-800 font-medium">{currentPageName}</span>
             </div>
-            
+
             <button
               onClick={() => router.back()}
               className="cursor-pointer flex items-center gap-2 text-gray-600 hover:text-red-600 transition mb-4"

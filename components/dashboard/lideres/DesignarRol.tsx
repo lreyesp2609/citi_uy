@@ -11,6 +11,7 @@ interface DesignarRolProps {
     persona: Persona;
     onSuccess: () => void;
     onClose: () => void;
+    onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => void;
 }
 
 interface ToastData {
@@ -19,7 +20,7 @@ interface ToastData {
     message: string;
 }
 
-function DesignarRolContent({ persona, onSuccess, onClose }: DesignarRolProps) {
+function DesignarRolContent({ persona, onSuccess, onClose, onShowToast }: DesignarRolProps) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -110,26 +111,36 @@ function DesignarRolContent({ persona, onSuccess, onClose }: DesignarRolProps) {
                 console.log('✅ Rol asignado exitosamente');
 
                 if (result.updated) {
-                    setToast({
-                        type: 'success',
-                        title: '✅ Rol actualizado',
-                        message: `El rol se ha actualizado exitosamente\n\nDe: ${result.data?.rol_anterior || 'N/A'}\nA: ${result.data?.rol_nuevo || 'N/A'}`
-                    });
+                    const updateMessage = `El rol se ha actualizado exitosamente\n\nDe: ${result.data?.rol_anterior || 'N/A'}\nA: ${result.data?.rol_nuevo || 'N/A'}`;
+
+                    if (onShowToast) {
+                        onShowToast('success', '✅ Rol actualizado', updateMessage);
+                    } else {
+                        setToast({
+                            type: 'success',
+                            title: '✅ Rol actualizado',
+                            message: updateMessage
+                        });
+                    }
                 } else {
                     // Acceder correctamente a las credenciales
                     const usuario = result.data?.credentials?.usuario || result.data?.usuario || generatedUsername;
                     const password = result.data?.credentials?.password || persona.numero_cedula;
 
-                    setToast({
-                        type: 'success',
-                        title: '✅ Usuario creado exitosamente',
-                        message: `Credenciales de acceso:\n\nUsuario: ${usuario}\nContraseña: ${password}\n\nLa persona puede cambiar su contraseña después del primer inicio de sesión.`
-                    });
+                    const toastMessage = `Credenciales de acceso:\n\nUsuario: ${usuario}\nContraseña: ${password}\n\nLa persona puede cambiar su contraseña después del primer inicio de sesión.`;
+
+                    if (onShowToast) {
+                        onShowToast('success', '✅ Usuario creado exitosamente', toastMessage);
+                    } else {
+                        setToast({
+                            type: 'success',
+                            title: '✅ Usuario creado exitosamente',
+                            message: toastMessage
+                        });
+                    }
                 }
 
-                setTimeout(() => {
-                    onSuccess();
-                }, 3000);
+                onSuccess();
             } else {
                 setError(result.message || 'Error al asignar rol');
             }

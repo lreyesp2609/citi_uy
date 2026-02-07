@@ -8,9 +8,10 @@ import DesignarRol from '@/components/dashboard/lideres/DesignarRol';
 
 interface ListaLideresProps {
   userRole: string;
+  onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => void;
 }
 
-export default function ListaLideres({ userRole }: ListaLideresProps) {
+export default function ListaLideres({ userRole, onShowToast }: ListaLideresProps) {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [filteredPersonas, setFilteredPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +19,7 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+
   // Estados para modales
   const [personaToView, setPersonaToView] = useState<Persona | undefined>();
   const [personaToAssignRole, setPersonaToAssignRole] = useState<Persona | undefined>();
@@ -197,13 +198,12 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {persona.rol ? (
-                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      persona.rol.toLowerCase() === 'pastor'
+                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${persona.rol.toLowerCase() === 'pastor'
                         ? 'bg-purple-100 text-purple-800'
                         : persona.rol.toLowerCase() === 'líder' || persona.rol.toLowerCase() === 'lider'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}>
                       {persona.rol}
                     </span>
                   ) : (
@@ -271,7 +271,7 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
 
       {/* Modal de Visualización */}
       {showViewModal && personaToView && (
-        <VerPersona 
+        <VerPersona
           persona={personaToView}
           onClose={() => {
             setShowViewModal(false);
@@ -282,7 +282,7 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
 
       {/* Modal de Designar Rol */}
       {showAssignRoleModal && personaToAssignRole && (
-        <DesignarRol 
+        <DesignarRol
           persona={personaToAssignRole}
           onSuccess={() => {
             setShowAssignRoleModal(false);
@@ -293,6 +293,7 @@ export default function ListaLideres({ userRole }: ListaLideresProps) {
             setShowAssignRoleModal(false);
             setPersonaToAssignRole(undefined);
           }}
+          onShowToast={onShowToast}
         />
       )}
     </div>

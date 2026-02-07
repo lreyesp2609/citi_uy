@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (usuario: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updatePasswordRequirement: (required: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await authService.checkSession();
       console.log('🔍 CheckAuth result:', result);
-      
+
       if (result.success && result.user) {
         console.log('✅ Usuario autenticado:', result.user.usuario, '- Rol:', result.user.rol);
         setUser(result.user);
@@ -64,24 +65,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await authService.login({ usuario, password });
       console.log('🔐 Login result:', result);
-      
+
       if (result.success && result.user) {
         console.log('✅ Login exitoso - Usuario:', result.user.usuario, '- Rol:', result.user.rol);
-        
+
         // Setear el usuario inmediatamente con los datos del login
         setUser(result.user);
-        
+
         // Pequeña espera para asegurar que la cookie se guarde
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         return { success: true };
       }
-      
+
       console.log('❌ Login fallido:', result.message);
       return { success: false, message: result.message };
     } catch (error: any) {
       console.error('💥 Error en login:', error);
       return { success: false, message: error.message };
+    }
+  };
+
+  const updatePasswordRequirement = (required: boolean) => {
+    if (user) {
+      setUser({ ...user, requiere_cambio_password: required });
     }
   };
 
@@ -108,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         refreshUser,
+        updatePasswordRequirement,
       }}
     >
       {children}

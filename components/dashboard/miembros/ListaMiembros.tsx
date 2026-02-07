@@ -8,9 +8,10 @@ import VerPersona from '@/components/dashboard/miembros/VerPersona';
 
 interface ListaMiembrosProps {
   userRole: string;
+  onShowToast?: (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => void;
 }
 
-export default function ListaMiembros({ userRole }: ListaMiembrosProps) {
+export default function ListaMiembros({ userRole, onShowToast }: ListaMiembrosProps) {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [filteredPersonas, setFilteredPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(true);
@@ -281,6 +282,7 @@ export default function ListaMiembros({ userRole }: ListaMiembrosProps) {
             setShowEditForm(false);
             setPersonaToEdit(undefined);
           }}
+          onShowToast={onShowToast}
         />
       )}
     </>

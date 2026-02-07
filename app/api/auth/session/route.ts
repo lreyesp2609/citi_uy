@@ -85,6 +85,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Obtener contraseña hasheada para detectar si es la predeterminada
+    const { data: usuarioConPassword, error: passwordError } = await supabase
+      .from('usuarios')
+      .select('contrasenia')
+      .eq('id_usuario', decoded.id)
+      .single();
+
+    // Detectar si la contraseña es la cédula (contraseña predeterminada)
+    let requiereCambioPassword = false;
+    if (personaData?.numero_cedula && usuarioConPassword?.contrasenia) {
+      const bcrypt = require('bcryptjs');
+      const passwordEsCedula = await bcrypt.compare(personaData.numero_cedula, usuarioConPassword.contrasenia);
+      if (passwordEsCedula) {
+        console.log('⚠️ Usuario tiene contraseña predeterminada (cédula)');
+        requiereCambioPassword = true;
+      }
+    }
+
     const user = {
       id: usuarioData.id_usuario,
       usuario: usuarioData.usuario,
@@ -99,6 +117,7 @@ export async function GET(request: NextRequest) {
       genero: personaData?.genero,
       nivel_estudio: personaData?.nivel_estudio,
       profesion: personaData?.profesion,
+      requiere_cambio_password: requiereCambioPassword,
     };
 
     console.log('✅ Usuario completo:', {

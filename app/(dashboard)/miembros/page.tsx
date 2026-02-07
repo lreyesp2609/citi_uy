@@ -7,12 +7,30 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import ListaMiembros from '@/components/dashboard/miembros/ListaMiembros';
 import FormNuevaPersona from '@/components/dashboard/miembros/FormPersona';
+import Toast from '@/components/ui/Toast';
+
+interface ToastState {
+  show: boolean;
+  type: 'success' | 'error' | 'info' | 'warning';
+  title: string;
+  message: string;
+}
 
 export default function MiembrosPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [toast, setToast] = useState<ToastState>({
+    show: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+
+  const showToast = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setToast({ show: true, type, title, message });
+  };
 
   // Verificar autenticación y permisos
   useEffect(() => {
@@ -90,7 +108,7 @@ export default function MiembrosPage() {
         </div>
 
         {/* Lista de Miembros */}
-        <ListaMiembros key={refreshKey} userRole={user.rol || ''} />
+        <ListaMiembros key={refreshKey} userRole={user.rol || ''} onShowToast={showToast} />
 
         {/* Formulario Modal */}
         {showForm && (
@@ -100,6 +118,17 @@ export default function MiembrosPage() {
               setRefreshKey(prev => prev + 1); // Forzar recarga de la lista
             }}
             onCancel={() => setShowForm(false)}
+            onShowToast={showToast}
+          />
+        )}
+
+        {/* Toast de notificación */}
+        {toast.show && (
+          <Toast
+            type={toast.type}
+            title={toast.title}
+            message={toast.message}
+            onClose={() => setToast({ ...toast, show: false })}
           />
         )}
       </div>
