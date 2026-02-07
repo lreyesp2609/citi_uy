@@ -247,18 +247,9 @@ function FormMinisterioContent({ ministerio, onSuccess, onCancel }: FormMinister
             }
 
             console.log(`✅ Ministerio ${isEditing ? 'actualizado' : 'creado'} exitosamente`);
-            showToast(
-                'success',
-                isEditing ? 'Ministerio actualizado' : 'Ministerio creado',
-                isEditing
-                    ? 'Los datos del ministerio han sido actualizados correctamente'
-                    : 'El ministerio ha sido creado exitosamente'
-            );
+            console.log(`✅ Ministerio ${isEditing ? 'actualizado' : 'creado'} exitosamente`);
+            onSuccess();
 
-            // Esperar un momento para que el usuario vea el toast antes de cerrar
-            setTimeout(() => {
-                onSuccess();
-            }, 1500);
 
         } catch (err: any) {
             const errorMsg = 'Ocurrió un error inesperado. Por favor, intenta nuevamente';

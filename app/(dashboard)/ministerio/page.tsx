@@ -258,14 +258,19 @@ export default function MinisterioPage() {
             {ministerios.map((ministerio) => (
               <div
                 key={ministerio.id_ministerio}
-                className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition"
+                className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition cursor-pointer relative group"
+                onClick={() => router.push(`/ministerio/${ministerio.id_ministerio}`)}
               >
+                {/* Overlay removed per user request for better UX */}
                 <div className="flex items-center justify-between mb-4">
                   {ministerio.logo_url ? (
                     <button
                       type="button"
-                      onClick={() => setActiveLogo({ url: ministerio.logo_url as string, nombre: ministerio.nombre })}
-                      className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveLogo({ url: ministerio.logo_url as string, nombre: ministerio.nombre });
+                      }}
+                      className="cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg relative z-10"
                       aria-label={`Ver logo del ministerio ${ministerio.nombre}`}
                     >
                       <img
@@ -278,9 +283,12 @@ export default function MinisterioPage() {
                     getIconoMinisterio(ministerio.nombre)
                   )}
                   {esPastor && (
-                    <div className="relative">
+                    <div className="relative z-10">
                       <button
-                        onClick={() => setShowMenuId(showMenuId === ministerio.id_ministerio ? null : ministerio.id_ministerio)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowMenuId(showMenuId === ministerio.id_ministerio ? null : ministerio.id_ministerio);
+                        }}
                         className="cursor-pointer text-gray-400 hover:text-gray-600"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -291,11 +299,11 @@ export default function MinisterioPage() {
                         <>
                           <div
                             className="fixed inset-0 z-10"
-                            onClick={() => setShowMenuId(null)}
+                            onClick={(e) => { e.stopPropagation(); setShowMenuId(null); }}
                           ></div>
                           <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border z-20">
                             <button
-                              onClick={() => handleEdit(ministerio)}
+                              onClick={(e) => { e.stopPropagation(); handleEdit(ministerio); }}
                               className="cursor-pointer w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,7 +312,7 @@ export default function MinisterioPage() {
                               Editar
                             </button>
                             <button
-                              onClick={() => handleAsignarLideres(ministerio)}
+                              onClick={(e) => { e.stopPropagation(); handleAsignarLideres(ministerio); }}
                               className="cursor-pointer w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -313,7 +321,7 @@ export default function MinisterioPage() {
                               Asignar Líderes
                             </button>
                             <button
-                              onClick={() => handleToggleEstado(ministerio)}
+                              onClick={(e) => { e.stopPropagation(); handleToggleEstado(ministerio); }}
                               className={`cursor-pointer w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 ${ministerio.activo ? 'text-red-600' : 'text-green-600'
                                 }`}
                             >
@@ -396,6 +404,11 @@ export default function MinisterioPage() {
           onSuccess={() => {
             setShowCreateForm(false);
             cargarMinisterios();
+            setToast({
+              type: 'success',
+              title: 'Ministerio creado',
+              message: 'El ministerio ha sido creado exitosamente'
+            });
           }}
           onCancel={() => setShowCreateForm(false)}
         />
@@ -407,6 +420,11 @@ export default function MinisterioPage() {
           onSuccess={() => {
             setMinisterioToEdit(undefined);
             cargarMinisterios();
+            setToast({
+              type: 'success',
+              title: 'Ministerio actualizado',
+              message: 'Los datos del ministerio han sido actualizados correctamente'
+            });
           }}
           onCancel={() => setMinisterioToEdit(undefined)}
         />
